@@ -1,6 +1,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { HeartIcon } from "@heroicons/react/solid";
+import { useRouter } from "next/router";
 import {
   sanityClient,
   urlFor,
@@ -8,6 +9,7 @@ import {
   PortableText,
 } from "../../lib/sanity";
 import Helmet from "../../components/Helmet";
+import Loader from "../../components/Loader";
 
 const recipeQuery = `*[_type == "recipe" && slug.current == $slug][0]{
     _id,
@@ -32,8 +34,10 @@ const recipeQuery = `*[_type == "recipe" && slug.current == $slug][0]{
     instructions
   }`;
 
-export default function SingleRecipe({ data: { recipe }, preview }) {
-  if (!recipe && Object.values(recipe).length) return <div>Loading</div>;
+export default function SingleRecipe({ data, preview = false }) {
+  const router = useRouter();
+  if (router.isFallback || (!data && !Object.values(data).length))
+    return <Loader />;
   // const {data: recipe} = usePreviewSubscription(recipeQuery, {
   //   params: {
   //     slug: data.recipe.slug,
@@ -43,7 +47,7 @@ export default function SingleRecipe({ data: { recipe }, preview }) {
   // });
 
   const { _id, name, slug, likes, mainImage, ingredient, instructions } =
-    recipe;
+    data.recipe;
   const [allLikes, setLikes] = useState(likes);
   const addLike = async () => {
     try {
@@ -61,7 +65,7 @@ export default function SingleRecipe({ data: { recipe }, preview }) {
   };
   return (
     <>
-    <Helmet title={name} />
+      <Helmet title={name} />
       <div className="columns is-centered is-vcentered is-mobile">
         <div className="column is-full-mobile has-text-centered">
           <h1 className="title is-1">{name}</h1>
@@ -152,4 +156,5 @@ export async function getStaticProps({ params }) {
 
 SingleRecipe.propTypes = {
   data: PropTypes.object.isRequired,
+  preview: PropTypes.bool,
 };
